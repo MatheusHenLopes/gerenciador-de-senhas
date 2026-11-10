@@ -2,6 +2,7 @@ const readline = require("node:readline/promises");
 const { stdin: input, stdout: output } = require("node:process");
 
 // Função para verificar se nenhum dos inputs digitados pelo usuário durante a adição de uma credencial saiu vazia
+
 async function validateRequiredField(terminal, message) {
   while (true) {
     const input = await terminal.question(message);
@@ -10,11 +11,12 @@ async function validateRequiredField(terminal, message) {
     if (cleanInput !== "") {
       return cleanInput;
     }
-    console.log("❌ Erro: Este campo é obrigatório e não pode ficar vazio!");
+    console.log("❌ Erro: Este campo é obrigatório.");
   }
 }
 
 // OPÇÃO [1]: Função para adição de credenciais (nome do serviço, login e senha)
+
 async function addCredential(terminal, endManager) {
   const newCredential = { service: "", user: "", password: "" };
 
@@ -29,7 +31,7 @@ async function addCredential(terminal, endManager) {
   );
 
   if (hasCredential) {
-    console.log("❌ Erro: Este serviço já está cadastrado!");
+    console.log("❌ Erro: Este serviço já está cadastrado.");
     return;
   }
 
@@ -48,7 +50,7 @@ async function addCredential(terminal, endManager) {
   newCredential.password = inputPassword;
 
   endManager.push(newCredential);
-  console.log("✅ Credencial cadastrada com sucesso!");
+  console.log("✅ Credencial cadastrada com sucesso.");
 }
 
 // OPÇÃO [2]: Lista os serviços mascarando a senha na tela (Anti-Shoulder Surfing)
@@ -67,6 +69,7 @@ function listCredentials(endManager) {
 }
 
 // OPÇÃO [3]: Busca um serviço existente com .find() e altera login/senha
+
 async function updateCredential(terminal, endManager) {
   if (endManager.length === 0) {
     console.log("\n⚠️ O cofre está vazio. Adicione uma credencial primeiro.");
@@ -108,7 +111,9 @@ async function updateCredential(terminal, endManager) {
 }
 
 // Função principal para interação do usuário com o terminal
+
 async function main() {
+    
   const terminal = readline.createInterface({ input, output });
   const endManager = [];
   let loopExecution = true;
