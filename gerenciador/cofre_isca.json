@@ -1,0 +1,22 @@
+[
+  {
+    "service": "banrisul",
+    "user": "matheus.lopes",
+    "password": "3023b723d725d255b2fbaafd:1c134e665c476f816e9aadc2c06ca8ac:8f77bd7a84f875c98fbeb3020a272d7be77c"
+  },
+  {
+    "service": "gmail",
+    "user": "matheus@gmail.com",
+    "password": "1488d9c7f1961daa3247faaa:dd4062365117bce8e1e232ad1e627ddb:a75cfbd6a4e0b04df332925d2f32a108d6"
+  },
+  {
+    "service": "instagram",
+    "user": "bolinhadegorfe@gmail.com",
+    "password": "6bbb0c8b4f46d43e6a956406:45f4c7824604dd9ad4e78bfe86827317:b093eb1e3254148235777ec08a40"
+  },
+  {
+    "service": "facebook",
+    "user": "ameamemamem.com",
+    "password": "64a5fad4bee892be1d6c30d5:73f92b5ad66f4a71d0323fe15a991014:4d74014060"
+  }
+]

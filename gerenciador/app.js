@@ -1,6 +1,13 @@
 const readline = require("node:readline/promises");
 const { stdin: input, stdout: output } = require("node:process");
 
+const {
+  encryptPassword,
+  decryptPassword,
+  initializeVaultSession,
+  saveVaultToDisk,
+} = require("./security.js");
+
 // Função para verificar se nenhum dos inputs digitados pelo usuário durante a adição de uma credencial saiu vazia
 
 async function validateRequiredField(terminal, message) {
@@ -11,13 +18,13 @@ async function validateRequiredField(terminal, message) {
     if (cleanInput !== "") {
       return cleanInput;
     }
-    console.log("❌ Erro: Este campo é obrigatório.");
+    console.log("[ERRO]: Este campo é obrigatório.");
   }
 }
 
 // OPÇÃO [1]: Função para adição de credenciais (nome do serviço, login e senha)
 
-async function addCredential(terminal, endManager) {
+async function addCredential(terminal, endManager, masterKey, activeFile) {
   const newCredential = { service: "", user: "", password: "" };
 
   const inputService = await validateRequiredField(
@@ -31,7 +38,7 @@ async function addCredential(terminal, endManager) {
   );
 
   if (hasCredential) {
-    console.log("❌ Erro: Este serviço já está cadastrado.");
+    console.log("[ERRO]: Este serviço já está cadastrado.");
     return;
   }
 
@@ -47,32 +54,37 @@ async function addCredential(terminal, endManager) {
     terminal,
     "Digite a senha que gostaria de utilizar para o serviço: "
   );
-  newCredential.password = inputPassword;
+  
+  // Criptografa a senha em AES-256-GCM antes de colocar no objeto
+  newCredential.password = encryptPassword(inputPassword, masterKey);
 
   endManager.push(newCredential);
-  console.log("✅ Credencial cadastrada com sucesso.");
+
+  // Salva a lista atualizada no arquivo JSON do HD (cofre.json ou cofre_isca.json)
+  await saveVaultToDisk(activeFile, endManager);
+  console.log("[ÊXITO] Credencial criptografada e salva no disco.");
 }
 
 // OPÇÃO [2]: Lista os serviços mascarando a senha na tela (Anti-Shoulder Surfing)
 function listCredentials(endManager) {
   if (endManager.length === 0) {
-    console.log("\n⚠️ O cofre está vazio no momento.");
+    console.log("\n[AVISO] O cofre está vazio no momento.");
     return;
   }
 
   console.log("\n=== CREDENCIAIS SALVAS NO COFRE ===");
   endManager.forEach((item, index) => {
     console.log(
-      `[${index + 1}] Serviço: ${item.service} | Login: ${item.user} | Senha: ••••••••`
+      "[" + (index + 1) + "] Serviço: " + item.service + " | Login: " + item.user + " | Senha: ********"
     );
   });
 }
 
 // OPÇÃO [3]: Busca um serviço existente com .find() e altera login/senha
 
-async function updateCredential(terminal, endManager) {
+async function updateCredential(terminal, endManager, masterKey, activeFile) {
   if (endManager.length === 0) {
-    console.log("\n⚠️ O cofre está vazio. Adicione uma credencial primeiro.");
+    console.log("\n[AVISO] O cofre está vazio. Adicione uma credencial primeiro.");
     return;
   }
 
@@ -87,12 +99,12 @@ async function updateCredential(terminal, endManager) {
   );
 
   if (!credentialFound) {
-    console.log("❌ Erro: Serviço não encontrado no cofre!");
+    console.log("[ERRO] Serviço não encontrado no cofre!");
     return;
   }
 
   console.log(
-    `\nEditando [${credentialFound.service}] (Login atual: ${credentialFound.user})`
+    "\nEditando [" + credentialFound.service + "] (Login atual: " + credentialFound.user + ")"
   );
 
   const newUser = await validateRequiredField(
@@ -105,9 +117,10 @@ async function updateCredential(terminal, endManager) {
   );
 
   credentialFound.user = newUser;
-  credentialFound.password = newPassword;
+  credentialFound.password = encryptPassword(newPassword, masterKey);
 
-  console.log("✅ Credencial atualizada com sucesso!");
+  await saveVaultToDisk(activeFile, endManager);
+  console.log("[ÊXITO] Credencial recriptografada e atualizada no disco.");
 }
 
 // Função principal para interação do usuário com o terminal
@@ -115,7 +128,18 @@ async function updateCredential(terminal, endManager) {
 async function main() {
     
   const terminal = readline.createInterface({ input, output });
-  const endManager = [];
+
+  console.log("\n=== AUTENTICAÇÃO DO COFRE ===");
+  const masterPassword = await validateRequiredField(
+  terminal,
+  "Digite sua Senha-Mestra para abrir o cofre: "
+  );
+
+  const vaultSession = await initializeVaultSession(masterPassword);
+  const endManager = vaultSession.endManager;
+  const masterKey = vaultSession.masterKey;
+  const activeFile = vaultSession.activeFile;
+
   let loopExecution = true;
 
   while (loopExecution) {
@@ -134,12 +158,12 @@ async function main() {
       cleanMenuAnswer !== "3" &&
       cleanMenuAnswer !== "4"
     ) {
-      console.log("❌ Erro: Valor inválido, tente novamente.");
+      console.log("[ERRO] Valor inválido, tente novamente.");
       continue;
     }
 
     if (cleanMenuAnswer === "1") {
-      await addCredential(terminal, endManager);
+      await addCredential(terminal, endManager, masterKey, activeFile);
       continue;
     }
 
@@ -149,7 +173,7 @@ async function main() {
     }
 
     if (cleanMenuAnswer === "3") {
-      await updateCredential(terminal, endManager);
+      await updateCredential(terminal, endManager, masterKey, activeFile);
       continue;
     }
 
