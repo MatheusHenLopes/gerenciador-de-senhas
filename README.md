@@ -92,20 +92,20 @@ https://github.com/user-attachments/assets/f6352c1d-1caa-4c49-a441-6387be076fb5
 | **KDF (*Key Derivation Function*)** | `crypto.scryptSync(masterPassword, vaultSalt, 32)` | Vazamento de senha-mestra em disco e ataques de dicionário. |
 | **Criptografia Simétrica Autenticada** | `AES-256-GCM` com `IV` de 12 bytes + `authTag` (16 bytes) | Leitura não autorizada do `.json` e adulteração física de bytes (*Tampering*). |
 | **2FA Nativo do Sistema Operacional** | `Windows.Security.Credentials.UI.UserConsentVerifier` | Acesso por terceiros em terminal aberto/desbloqueado. |
-| **Sanitização de Memória / Clipboard** | `Set-Clipboard` via `stdin pipe` + `setTimeout(..., 15000)` | *Shoulder Surfing* (espionagem visual) e roubo de histórico do `Ctrl + V`. |
+| **Clipboard** | `Set-Clipboard` via `stdin pipe` + `setTimeout(..., 15000)` | *Shoulder Surfing* (espionagem visual) e roubo de histórico do `Ctrl + V`. |
 | **Tecnologia de Engano (*Deception*)** | Isolamento de estado em `cofre_isca.json` (*Honeypot*) | Extorsão ou coação física contra o proprietário do cofre. |
-| **Rastreabilidade Forense (SIEM Local)** | Coleta via `os.hostname()` + `os.userInfo().username` | Tentativas de força bruta ou negação de autoria em ataques locais. |
+| **Rastreabilidade (SIEM Local)** | Coleta via `os.hostname()` + `os.userInfo().username` | Tentativas de força bruta ou negação de autoria em ataques locais. |
 
 ---
 
-## 📂 Estrutura Modular do Projeto
+## Estrutura Modular do Projeto
 
 * **`app.js`**: Camada de interface em linha de comando (CLI), validação de entradas obrigatórias, controle de fluxo assíncrono (`async/await`) e manipulação de estruturas de dados em memória (`.some()`, `.find()`, `.findIndex()`, `.splice()`).
 * **`security.js`**: Camada de segurança e sistema operacional. Responsável pela derivação de chaves, cifragem/decifragem `AES-256-GCM`, comunicação com processos filhos do PowerShell (`node:child_process`), persistência em arquivos JSON (`node:fs/promises`) e auditoria forense (`node:os`).
 
 ---
 
-## 🚀 Como Executar Localmente
+## Como Executar Localmente
 
 Pré-requisitos: **Node.js** (v18 ou superior) em ambiente **Windows 10/11** com Windows Hello configurado.
 
