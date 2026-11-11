@@ -85,7 +85,7 @@ https://github.com/user-attachments/assets/f6352c1d-1caa-4c49-a441-6387be076fb5
 
 ---
 
-## 🛡️ Resumo da Arquitetura de Segurança
+## Resumo da Arquitetura de Segurança
 
 | Camada de Proteção | Implementação Técnica no Código | Ameaça Mitigada |
 | :--- | :--- | :--- |
