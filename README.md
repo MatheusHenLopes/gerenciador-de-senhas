@@ -1,4 +1,4 @@
-# 🔐 CLI Password Manager 
+# CLI Password Manager 
 
 Gerenciador de credenciail através do terminal, (CLI) desenvolvido em **Node.js** utilizando exclusivamente módulos nativos da plataforma (`node:crypto`, `node:fs/promises`, `node:os`, `node:child_process`, `node:readline/promises` e `node:process`).
 
