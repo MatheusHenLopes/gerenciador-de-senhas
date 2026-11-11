@@ -147,3 +147,12 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Gerado com as senhas que devem ser guardadas
+cofre.json
+
+# Gerado pelo Honeypot
+cofre_isca.json
+
+# Auditoria de adulterações
+auditoria.log

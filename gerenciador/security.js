@@ -1,10 +1,11 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const os = require("node:os");
+const childProcess = require("node:child_process");
 
 // Configurações de arquivos e segurança em camelCase
 const realVaultFile = "./cofre.json";
-const honeypotVaultFile = "./cofre_isca.json";
+const honeypotVaultFile = "./cofre-isca.json";
 const auditLogFile = "./auditoria.log";
 
 const vaultSalt = "ETEP_CYBERSEC_SALT_2026";
@@ -32,69 +33,56 @@ function deriveMasterKey(masterPassword) {
 
 // 3. Criptografa a senha com AES-256-GCM
 function encryptPassword(plainPassword, masterKey) {
-  // Sorteia 12 bytes aleatórios (IV) para que duas senhas iguais nunca fiquem iguais no JSON
   const ivBuffer = crypto.randomBytes(12);
-
-  // Cria a máquina de criptografia com o algoritmo, a chave de 32 bytes e o IV
   const cipher = crypto.createCipheriv("aes-256-gcm", masterKey, ivBuffer);
 
-  // Passa a senha pela máquina (de texto utf8 para hexadecimal) e finaliza o bloco
   let encryptedPassword = cipher.update(plainPassword, "utf8", "hex");
   encryptedPassword = encryptedPassword + cipher.final("hex");
 
-  // Pega o selo matemático de integridade (AuthTag) gerado pelo modo GCM
   const authTagBuffer = cipher.getAuthTag();
 
-  // Converte os buffers binários do IV e da AuthTag para texto hexadecimal
   const ivHex = ivBuffer.toString("hex");
   const authTagHex = authTagBuffer.toString("hex");
 
-  // Junta as 3 partes separadas por dois-pontos para salvar no JSON
   const finalPayload = ivHex + ":" + authTagHex + ":" + encryptedPassword;
   return finalPayload;
 }
 
-// 4. Descriptografa a senha e verifica se o arquivo cofre.json não foi adulterado
+// 4. Descriptografa a senha e verifica se o arquivo JSON não foi adulterado
 async function decryptPassword(encryptedPayload, masterKey, serviceName) {
   try {
-    // Divide o texto "iv:authTag:senhaCifrada" onde tem dois-pontos
     const parts = encryptedPayload.split(":");
 
     if (parts.length !== 3) {
       throw new Error("Formato inválido no arquivo JSON.");
     }
 
-    // Transforma o IV e a AuthTag de texto hexadecimal de volta para bytes na RAM (Buffer)
     const ivBuffer = Buffer.from(parts[0], "hex");
     const authTagBuffer = Buffer.from(parts[1], "hex");
     const encryptedText = parts[2];
 
-    // Cria a máquina de descriptografia e entrega o selo de integridade (AuthTag)
     const decipher = crypto.createDecipheriv("aes-256-gcm", masterKey, ivBuffer);
     decipher.setAuthTag(authTagBuffer);
 
-    // Tenta destrancar a senha. Se 1 letra foi alterada no JSON, o .final() explode erro aqui!
     let decryptedPassword = decipher.update(encryptedText, "hex", "utf8");
     decryptedPassword = decryptedPassword + decipher.final("utf8");
 
     return decryptedPassword;
   } catch (error) {
-    // Se caiu no catch, a Senha-Mestra está errada ou tentaram hackear o arquivo cofre.json!
     await logSecurityEvent(
-      "VIOLACAO_DE_INTEGRIDADE",
-      "Falha ao abrir o servico: " + serviceName + ". Senha-Mestra incorreta ou arquivo JSON adulterado."
+      "VIOLACAO_DE_INTEGRIDADE_OU_CHAVE",
+      "Falha ao descriptografar o servico: " + serviceName + ". Chave incorreta ou arquivo JSON adulterado."
     );
     return null;
   }
 }
 
-// 5. Abre o cofre no início do programa (decide entre Cofre Real ou Cofre Isca/Honeypot)
+// 5. Abre o cofre no início e valida se a Senha-Mestra está correta
 async function initializeVaultSession(masterPassword) {
   const masterKey = deriveMasterKey(masterPassword);
   let isHoneypot = false;
   let activeFile = realVaultFile;
 
-  // Se o usuário digitou a senha de coação ("911"), troca silenciosamente para o Cofre Isca
   if (masterPassword === duressPassword) {
     isHoneypot = true;
     activeFile = honeypotVaultFile;
@@ -105,10 +93,22 @@ async function initializeVaultSession(masterPassword) {
     );
   }
 
-  // Tenta ler o arquivo do cofre no HD. Se ainda não existir, cai no catch e cria um novo
   try {
     const fileContent = await fs.readFile(activeFile, "utf-8");
     const savedList = JSON.parse(fileContent);
+
+    // Se já existem senhas salvas no cofre, testa destrancar a primeira para validar a Senha-Mestra!
+    if (savedList.length > 0) {
+      const testUnlock = await decryptPassword(
+        savedList[0].password,
+        masterKey,
+        savedList[0].service
+      );
+
+      if (testUnlock === null) {
+        return null; // Senha-Mestra incorreta ou cofre adulterado!
+      }
+    }
 
     return {
       endManager: savedList,
@@ -117,7 +117,6 @@ async function initializeVaultSession(masterPassword) {
       isHoneypot: isHoneypot,
     };
   } catch (error) {
-    // Se entrou aqui, é a primeira vez que o programa está abrindo esse cofre
     if (isHoneypot === true) {
       const fakeCredentials = [
         {
@@ -142,7 +141,6 @@ async function initializeVaultSession(masterPassword) {
       };
     }
 
-    // Se for o cofre real e o arquivo ainda não existir, começa com uma lista vazia []
     return {
       endManager: [],
       masterKey: masterKey,
@@ -152,10 +150,98 @@ async function initializeVaultSession(masterPassword) {
   }
 }
 
-// 6. Salva a lista endManager atualizada dentro do arquivo JSON no Disco Rígido
+// 6. Salva a lista endManager atualizada dentro do arquivo JSON no HD
 async function saveVaultToDisk(activeFile, endManager) {
   const jsonText = JSON.stringify(endManager, null, 2);
   await fs.writeFile(activeFile, jsonText, "utf-8");
+}
+
+// 7. Chama a janela oficial de PIN/Biometria do Windows e espera o usuário digitar
+async function verifyWindowsPin() {
+  try {
+    const psCommand =
+      "Add-Type -AssemblyName System.Runtime.WindowsRuntime; " +
+      "$null = [Windows.Security.Credentials.UI.UserConsentVerifier, Windows.Security.Credentials.UI, ContentType = WindowsRuntime]; " +
+      "$null = [Windows.Security.Credentials.UI.UserConsentVerificationResult, Windows.Security.Credentials.UI, ContentType = WindowsRuntime]; " +
+      "$op = [Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('Confirme seu PIN para liberar a senha do cofre'); " +
+      "$asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -like 'IAsyncOperation*' })[0]; " +
+      "$asTask = $asTaskGeneric.MakeGenericMethod([Windows.Security.Credentials.UI.UserConsentVerificationResult]); " +
+      "$netTask = $asTask.Invoke($null, @($op)); " +
+      "$netTask.Wait(-1) | Out-Null; " +
+      "if ($netTask.Result -eq 'Verified') { exit 0 } else { exit 1 }";
+
+    childProcess.execFileSync(
+      "powershell",
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", psCommand],
+      { stdio: "ignore" }
+    );
+
+    return true;
+  } catch (error) {
+    await logSecurityEvent(
+      "FALHA_AUTENTICACAO_WINDOWS_PIN",
+      "O usuario errou ou cancelou o PIN de seguranca do Windows Hello."
+    );
+    return false;
+  }
+}
+
+  // 8. Copia a senha para o Ctrl+V do Windows e limpa sozinho após 15 segundos
+  function copyToClipboardWithAutoClear(plainPassword) {
+    try {
+      // Envia a senha por um tubo isolado de memória (input) sem travar o teclado do terminal
+      childProcess.execFileSync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          "$senha = [Console]::In.ReadToEnd(); Set-Clipboard -Value $senha",
+        ],
+        {
+          input: plainPassword,
+          stdio: ["pipe", "ignore", "ignore"],
+        }
+      );
+
+      // Agenda a limpeza automática do Ctrl+V para daqui a 15 segundos em segundo plano
+      const timer = setTimeout(() => {
+        childProcess.execFile(
+          "powershell",
+          ["-NoProfile", "-Command", "Set-Clipboard -Value $null"],
+          { stdio: "ignore" },
+          () => {}
+        );
+      }, 15000);
+
+      // Permite que o programa feche normalmente mesmo se o usuário sair antes dos 15s
+      timer.unref();
+      return true;
+    } catch (error) {
+      return false;
+  }
+}
+
+// 9. Lê o conteúdo do arquivo auditoria.log para mostrar no terminal
+async function readAuditLog() {
+  try {
+    const logContent = await fs.readFile(auditLogFile, "utf-8");
+    if (logContent.trim() === "") {
+      return "Nenhum incidente registrado no log.";
+    }
+    return logContent;
+  } catch (error) {
+    return "Nenhum incidente registrado no log ate o momento.";
+  }
+}
+
+  // 10. Apaga o histórico do auditoria.log e registra o evento de limpeza
+
+  async function clearAuditLog() {
+  await fs.writeFile(auditLogFile, "", "utf-8");
+  await logSecurityEvent(
+    "AUDITORIA_REINICIADA",
+    "Historico de logs limpo pelo administrador apos confirmacao de PIN."
+  );
 }
 
 module.exports = {
@@ -164,4 +250,8 @@ module.exports = {
   initializeVaultSession,
   saveVaultToDisk,
   logSecurityEvent,
+  verifyWindowsPin,
+  copyToClipboardWithAutoClear,
+  readAuditLog,
+  clearAuditLog,
 };
