@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Zero--Knowledge-0A0A0C?style=for-the-badge&logo=hackthebox&logoColor=FFFFFF&labelColor=8B0000" />
 </p>
 
-Gerenciador de senhas via terminal (**CLI**) desenvolvido em **Node.js** utilizando exclusivamente módulos nativos da plataforma (`node:crypto`, `node:fs/promises`, `node:os`, `node:child_process`, `node:readline/promises` e `node:process`), sem dependência de pacotes externos.
+Gerenciador de senhas via terminal (**CLI**) desenvolvido em **Node.js** utilizando exclusivamente módulos nativos da plataforma (`node:crypto`, `node:fs/promises`, `node:os`, `node:child_process`, `node:readline/promises` e `node:process`).
 
 <br clear="left"/>
 
