@@ -60,6 +60,8 @@ flowchart TD
     style F fill:#3B0404,stroke:#8B0000,stroke-width:2px,color:#ffffff
     style M3 fill:#0A0A0C,stroke:#B91C1C,stroke-width:2px,color:#ffffff
 
+```
+
 ## Demonstração Prática (Passo a Passo em Vídeo)
 
 ### 1. Ciclo CRUD Completo e Persistência Criptografada (`AES-256-GCM`)
