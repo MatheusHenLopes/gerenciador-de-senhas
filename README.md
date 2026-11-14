@@ -1,12 +1,23 @@
-# CLI Password Manager 
+<img align="left" width="170" hspace="20" vspace="5" src="https://github.com/user-attachments/assets/fb41e5c8-c5f4-4b2c-934f-08e3897dff81" alt="HoneyGuard Logo" />
 
-Gerenciador de credenciail através do terminal, (CLI) desenvolvido em **Node.js** utilizando exclusivamente módulos nativos da plataforma (`node:crypto`, `node:fs/promises`, `node:os`, `node:child_process`, `node:readline/promises` e `node:process`).
+# HoneyGuard — CLI Password manager
 
-O projeto implementa criptografia autenticada (**AES-256-GCM**), integração nativa com biometria/PIN do Sistema Operacional (**Windows Hello**), área de transferência com autodestruição (*TTL Clipboard*), auditoria persistente e um sistema de **Cofre Isca (*Honeypot* / Senha de Coação)**.
+<p>
+  <img src="https://img.shields.io/badge/Node.js-0A0A0C?style=for-the-badge&logo=nodedotjs&logoColor=FFFFFF&labelColor=DC2626" />
+  <img src="https://img.shields.io/badge/AES--256--GCM-0A0A0C?style=for-the-badge&logo=letsencrypt&logoColor=FFFFFF&labelColor=8B0000" />
+  <img src="https://img.shields.io/badge/PowerShell_IPC-0A0A0C?style=for-the-badge&logo=powershell&logoColor=FFFFFF&labelColor=8B0000" />
+  <img src="https://img.shields.io/badge/Zero--Knowledge-0A0A0C?style=for-the-badge&logo=hackthebox&logoColor=FFFFFF&labelColor=8B0000" />
+</p>
 
----
+Gerenciador de senhas via terminal (**CLI**) desenvolvido em **Node.js** utilizando exclusivamente módulos nativos da plataforma (`node:crypto`, `node:fs/promises`, `node:os`, `node:child_process`, `node:readline/promises` e `node:process`), sem dependência de pacotes externos.
 
-## Fluxograma
+<br clear="left"/>
+
+O projeto implementa criptografia autenticada (**AES-256-GCM**), integração nativa com biometria/PIN do Sistema Operacional (**Windows Hello**), área de transferência com autodestruição (*TTL Clipboard*), auditoria forense persistente e um sistema de **Cofre Isca (*Honeypot* / Senha de Coação)**.
+
+> **Status do Projeto:** Em evolução contínua. Este `README` documenta a versão inicial da arquitetura, cujo objetivo central é aprimorar o código até consolidar uma aplicação completa e funcional para distribuição.
+
+## Fluxograma de Arquitetura e Segurança
 
 ```mermaid
 flowchart TD
@@ -21,7 +32,7 @@ flowchart TD
     D -- NÃO (Fluxo Normal) --> G[(Carrega cofre.json Real)]
     G --> H{Valida AuthTag da\n1ª Credencial}
     
-    H -- Falha Matemática --> I[ ACESSO NEGADO\nRegistra Violação no auditoria.log]
+    H -- Falha Matemática --> I[ACESSO NEGADO\nRegistra Violação no auditoria.log]
     I --> Z([Encerra Processo])
     
     H -- Chave Íntegra --> J[Menu Principal CRUD]
@@ -43,9 +54,11 @@ flowchart TD
     N --> N1{Está no Honeypot?}
     N1 -- SIM --> N2[Exibe falso status limpo\nOculta alertas do invasor]
     N1 -- NÃO --> N3[Exibe auditoria.log real\nPermite limpeza mediante PIN do Windows]
-```
 
----
+    style I fill:#4A0404,stroke:#B91C1C,stroke-width:2px,color:#ffffff
+    style E fill:#3B0404,stroke:#8B0000,stroke-width:2px,color:#ffffff
+    style F fill:#3B0404,stroke:#8B0000,stroke-width:2px,color:#ffffff
+    style M3 fill:#0A0A0C,stroke:#B91C1C,stroke-width:2px,color:#ffffff
 
 ## Demonstração Prática (Passo a Passo em Vídeo)
 
