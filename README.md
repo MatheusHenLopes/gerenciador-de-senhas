@@ -13,7 +13,7 @@ Gerenciador de senhas via terminal (**CLI**) desenvolvido em **Node.js** utiliza
 
 <br clear="left"/>
 
-O projeto implementa criptografia autenticada (**AES-256-GCM**), integração nativa com biometria/PIN do Sistema Operacional (**Windows Hello**), área de transferência com autodestruição (*TTL Clipboard*), auditoria forense persistente e um sistema de **Cofre Isca (*Honeypot* / Senha de Coação)**.
+O projeto implementa criptografia autenticada (**AES-256-GCM**), integração nativa com biometria/PIN do Sistema Operacional (**Windows Hello**), Clipboard, auditoria e um sistema de **Cofre Isca** (*Honeypot*).
 
 > **Status do Projeto:** Em evolução contínua. Este `README` documenta a versão inicial da arquitetura, cujo objetivo central é aprimorar o código até consolidar uma aplicação completa e funcional para distribuição.
 
